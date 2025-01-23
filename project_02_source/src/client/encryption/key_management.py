@@ -15,6 +15,16 @@ class KeyManager:
         return os.urandom(32)
 
     @staticmethod
+    def generate_salt() -> bytes:
+        """
+        Generates a random 16-byte salt.
+
+        Returns:
+            bytes: A random 16-byte salt.
+        """
+        return os.urandom(16)
+
+    @staticmethod
     def derive_key_from_password(password: str, salt: bytes) -> bytes:
         """
         Derives a 256-bit AES key from a password using PBKDF2-HMAC with SHA-256.
