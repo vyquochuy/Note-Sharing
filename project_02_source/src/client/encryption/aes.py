@@ -61,21 +61,3 @@ class AESUtil:
         plaintext = aesgcm.decrypt(nonce, ciphertext, None)  # No additional authenticated data (AAD)
 
         return plaintext
-
-# Example usage
-if __name__ == "__main__":
-    # Generate a key
-    key = AESUtil.generate_key()
-    print(f"Generated Key: {key.hex()}")
-
-    # Data to encrypt
-    data = b"This is a secret note."
-    print(f"Original Data: {data}")
-
-    # Encrypt the data
-    encrypted = AESUtil.encrypt(data, key)
-    print(f"Encrypted Data: {encrypted}")
-
-    # Decrypt the data
-    decrypted = AESUtil.decrypt(encrypted, key)
-    print(f"Decrypted Data: {decrypted}")
