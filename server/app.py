@@ -1,7 +1,18 @@
 import os
+
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_restful import Api
 from db import init_app
+
+# Modules
+from modules.PingPong import PingPong
+from modules.Register import Register
+from modules.Login import Login
+from modules.Logout import Logout
+from modules.UploadImages import UploadImages
+from modules.DownloadImages import DownloadImages
+from modules.Sharing import Sharing
 
 db = SQLAlchemy()
 
@@ -58,7 +69,51 @@ def create_app():
     @app.route("/", methods=["GET"])
     def home():
         return jsonify({"message": "Welcome to the Task API!"})
-
+    
+    
+    # API initialising
+    api = Api(app)
+    api.add_resource(PingPong, '/ping')
+    api.add_resource(Register, '/register')
+    api.add_resource(Login, '/login')
+    api.add_resource(Logout, '/logout')
+    api.add_resource(UploadImages, '/upload')
+    api.add_resource(
+        DownloadImages,
+        '/viewall',
+        endpoint = 'viewall',
+        methods = ['POST']
+    )
+    api.add_resource(
+        DownloadImages, 
+        '/passphrase',
+        endpoint = 'passphrase',
+        methods = ['POST']
+    )
+    api.add_resource(
+        DownloadImages,
+        '/download',
+        endpoint = 'download',
+        methods = ['POST']
+    )
+    api.add_resource(
+        DownloadImages,
+        '/checksum',
+        endpoint = 'checksum',
+        methods = ['POST']
+    )
+    api.add_resource(
+        Sharing,
+        '/publickey',
+        endpoint = 'publickey',
+        methods = ['POST']
+    )
+    api.add_resource(
+        Sharing,
+        '/share',
+        endpoint = 'share',
+        methods = ['POST']
+    )
     return app
 
 
