@@ -2,18 +2,18 @@ from flask import request
 from flask_restful import Resource, reqparse
 
 from .Models.User import UserModel
-from .Models.Image import ImageModel
+from .Models.File import ImageModel
 
 from .Utils import Utils
 import os
 
-class UploadImages(Resource):
+class UploadFiles(Resource):
     def __init__(self):
         self.__UA = UserModel()
         self.__im = ImageModel()
-        self.ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp']
+        self.ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp', '.txt', '.pdf', '.docx', '.xlsx', '.zip', '.rar']
 
-    def get_image(self):
+    def get_file(self):
         try:
             image_file = request.files['image']
 
@@ -36,7 +36,7 @@ class UploadImages(Resource):
             real_name = Utils.get_input('real_name')
             checksum = Utils.get_input('checksum')
 
-            image = self.get_image()
+            image = self.get_file()
            
             if not self.__UA.check_api_token(user_id, api_token):
                 raise Exception('Permission denied: either user_id or api_token is wrong')

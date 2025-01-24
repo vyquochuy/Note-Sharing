@@ -1,13 +1,13 @@
 from flask import request, send_from_directory, current_app
 from flask_restful import Resource
 
-from .Models.Image import ImageModel
+from .Models.File import ImageModel
 from .Models.User import UserModel
 
 from .Utils import Utils
 import os
 
-class DownloadImages(Resource):
+class DownloadFiles(Resource):
     def __init__(self):
         self.__UA = UserModel()
         self.__im = ImageModel()

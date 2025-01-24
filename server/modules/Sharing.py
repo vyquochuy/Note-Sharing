@@ -2,7 +2,7 @@ from flask import request
 from flask_restful import Resource
 
 from .Models.User import UserModel
-from .Models.Image import ImageModel
+from .Models.File import ImageModel
 
 from .Utils import Utils
 

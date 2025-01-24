@@ -9,8 +9,8 @@ from modules.PingPong import PingPong
 from modules.Register import Register
 from modules.Login import Login
 from modules.Logout import Logout
-from modules.UploadImages import UploadImages
-from modules.DownloadImages import DownloadImages
+from modules.Uploadfiles import UploadFiles
+from modules.Downloadfiles import DownloadFiles
 from modules.Sharing import Sharing
 
 db = SQLAlchemy()
@@ -79,27 +79,27 @@ def create_app():
     api.add_resource(Register, '/register')
     api.add_resource(Login, '/login')
     api.add_resource(Logout, '/logout')
-    api.add_resource(UploadImages, '/upload')
+    api.add_resource(UploadFiles, '/upload')
     api.add_resource(
-        DownloadImages,
+        DownloadFiles,
         '/viewall',
         endpoint='viewall',
         methods=['POST']
     )
     api.add_resource(
-        DownloadImages,
+        DownloadFiles,
         '/passphrase',
         endpoint='passphrase',
         methods=['POST']
     )
     api.add_resource(
-        DownloadImages,
+        DownloadFiles,
         '/download',
         endpoint='download',
         methods=['POST']
     )
     api.add_resource(
-        DownloadImages,
+        DownloadFiles,
         '/checksum',
         endpoint='checksum',
         methods=['POST']

@@ -32,7 +32,12 @@ class UploadFile:
         
         public_key, key_length = self.get_public_key()
 
-        encrypted_file, real_name, key, original_checksum = self.__aes.encrypt(file_path)
+        try:
+            encrypted_file, real_name, key, original_checksum = self.__aes.encrypt(file_path)
+            if not all([encrypted_file, real_name, key, original_checksum]):
+                raise ValueError("Encryption failed, returned None values")
+        except Exception as e:
+            raise Exception(f"Encryption error: {str(e)}")
 
         key = RSA.encrypt(key, public_key, key_length)
         checksum = RSA.encrypt(original_checksum, public_key, key_length)
@@ -50,12 +55,11 @@ class UploadFile:
 
         response = json.loads(response.text)
 
-        # Delete temp files after finished
-        os.remove(encrypted_file)
-
         if response["error"]:
             raise Exception(response["message"])
         else:
+            # Delete temp files after successful upload
+            os.remove(encrypted_file)
             return response["message"]
 
 class UploadUI:

@@ -19,51 +19,36 @@ class AES():
         return secrets.token_hex(length // 2)
     
     def encrypt(self, filename):
-        '''Encrypt an image, using AES and CBC mode.
+        '''Encrypt a file, using AES and CBC mode.
 
         Input:
             - filename : filename to encrypt.
 
         Output:
-            - encrypted_image : path to encrypted temporary image
-            - real_name : original name of the image 
-            - self.__key : key created to encrypt this image
-            - original_checksum : original image checksum
+            - encrypted_file : path to encrypted temporary file
+            - real_name : original name of the file 
+            - self.__key : key created to encrypt this file
+            - original_checksum : original file checksum
         '''
-        encrypted_image, real_name = Utils.convert_to_encryptable(filename)
+        encrypted_file, real_name = Utils.convert_to_encryptable(filename)
 
-        img = cv2.imread(encrypted_image)
+        with open(encrypted_file, 'rb') as f:
+            file_bytes = f.read()
 
-        original_checksum = hashlib.sha256(img.tobytes()).hexdigest()
+        original_checksum = hashlib.sha256(file_bytes).hexdigest()
 
-        if img.size % self.__key_length > 0:
-            row = img.shape[0]
-
-            # Number of rows to pad (4 rows)
-            pad = self.__key_length - (row % self.__key_length)
-
-            # Pad rows at the bottom
-            img = np.pad(img, ((0, pad), (0, 0), (0, 0)))
-
-            # Store the pad value in the last element4
-            img[-1, -1, 0] = pad
-
-        else:
-            img = np.pad(img, ((0, self.__key_length), (0, 0), (0, 0)))
-            img[-1, -1, 0] = self.__key_length
-
-        img_bytes = img.tobytes()
+        # Pad the file bytes to be a multiple of key length
+        pad_length = self.__key_length - (len(file_bytes) % self.__key_length)
+        file_bytes += bytes([pad_length]) * pad_length
 
         # Encrypt the array of bytes.
-        encrypted_img_bytes = cc.new(self.__key.encode(), cc.MODE_CBC, self.__iv).encrypt(img_bytes) 
+        encrypted_file_bytes = cc.new(self.__key.encode(), cc.MODE_CBC, self.__iv).encrypt(file_bytes)
 
-        # Convert the encrypted buffer to NumPy array and reshape to the shape of the padded image
-        encrypted_img_np = np.frombuffer(encrypted_img_bytes, np.uint8).reshape(img.shape)
+        # Save the encrypted file
+        with open(encrypted_file, 'wb') as f:
+            f.write(encrypted_file_bytes)
 
-        # Save the image - Save in PNG format because PNG is lossless (JPEG format is not going to work).
-        cv2.imwrite(encrypted_image, encrypted_img_np)
-
-        return encrypted_image, real_name, self.__key, original_checksum
+        return encrypted_file, real_name, self.__key, original_checksum
 
     def decrypt(self, filename, old_filename, key):
         '''Decrypt filename with key, return old_filename
@@ -74,23 +59,22 @@ class AES():
             - key : encryption key (AES)
         
         Return:
-            - decrypted_checksum : checksum of the decrypted image.
+            - decrypted_checksum : checksum of the decrypted file.
         '''
-        encrypted_img = cv2.imread(filename)
+        with open(filename, 'rb') as f:
+            encrypted_file_bytes = f.read()
 
-        decrypted_img_bytes = cc.new(key.encode(), cc.MODE_CBC, self.__iv).decrypt(encrypted_img.tobytes())
+        decrypted_file_bytes = cc.new(key.encode(), cc.MODE_CBC, self.__iv).decrypt(encrypted_file_bytes)
 
-        # The shape of the encrypted and decrypted image is the same (304, 451, 3)
-        decrypted_img_np = np.frombuffer(decrypted_img_bytes, np.uint8).reshape(encrypted_img.shape) 
+        # Remove padding
+        pad_length = decrypted_file_bytes[-1]
+        decrypted_file_bytes = decrypted_file_bytes[:-pad_length]
 
-        # Get the stored padding value   
-        padding = int(decrypted_img_np[-1, -1, 0])
+        decrypted_checksum = hashlib.sha256(decrypted_file_bytes).hexdigest()
 
-        decrypted_img = decrypted_img_np[0:-padding, :, :].copy()
-
-        decrypted_checksum = hashlib.sha256(decrypted_img.tobytes()).hexdigest()
-        
-        cv2.imwrite(old_filename, decrypted_img)
+        # Save the decrypted file
+        with open(old_filename, 'wb') as f:
+            f.write(decrypted_file_bytes)
 
         return decrypted_checksum
         
