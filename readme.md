@@ -20,8 +20,8 @@ flask init-db
 ```
 3.chạy app.py để chạy server
 -----------------------------
-Trong folder client:
-1. CD vào folder client.
+Trong thư mục chứa dự án:
+1. CD vào thư mục chứa dự án.
 2. Tải thư viện cần thiết:
 ```
 pip install -r requirements.txt
