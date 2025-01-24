@@ -3,6 +3,10 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api
 from db import init_app, close_db  # Import init_app and close_db from db.py
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 # Modules
 from modules.PingPong import PingPong
@@ -20,6 +24,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'  # File SQLite
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['DATABASE'] = 'data.db'  # Set the DATABASE configuration key
+    app.config['UPLOAD_FOLDER'] = 'uploads' # Set the UPLOAD_FOLDER configuration key
 
     # Ensure the instance folder exists
     os.makedirs(app.instance_path, exist_ok=True)

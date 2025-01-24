@@ -2,7 +2,7 @@ from flask import request
 from flask_restful import Resource, reqparse
 
 from .Models.User import UserModel
-from .Models.File import ImageModel
+from .Models.File import FileModel
 
 from .Utils import Utils
 import os
@@ -10,23 +10,23 @@ import os
 class UploadFiles(Resource):
     def __init__(self):
         self.__UA = UserModel()
-        self.__im = ImageModel()
+        self.__im = FileModel()
         self.ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp', '.txt', '.pdf', '.docx', '.xlsx', '.zip', '.rar']
 
     def get_file(self):
         try:
-            image_file = request.files['image']
+            _file = request.files['file']
 
         except Exception:
-            raise Exception('No image selected')
+            raise Exception('No file selected')
         else:
-            _, extension = os.path.splitext(image_file.filename.lower())
+            _, extension = os.path.splitext(_file.filename.lower())
 
             if extension not in self.ALLOWED_EXTENSIONS:
                 raise Exception('Extension not allowed')
 
             else:
-                return image_file
+                return _file
 
     def post(self):
         try:
@@ -42,9 +42,9 @@ class UploadFiles(Resource):
                 raise Exception('Permission denied: either user_id or api_token is wrong')
             
             else:
-                new_path, new_img_id = self.__im.save_img_dir(image)
-                self.__im.save_img_record(
-                    user_id, new_img_id,
+                new_path, new_file_id = self.__im.save_file_dir(image)
+                self.__im.save_file_record(
+                    user_id, new_file_id,
                     passphrase, new_path,
                     real_name, checksum
                 )
@@ -58,7 +58,7 @@ class UploadFiles(Resource):
         else:
             return {
                 'error' : False,
-                'image_filename' : real_name,
-                'image_id' : new_img_id,
+                '_filename' : real_name,
+                'file_id' : new_file_id,
                 'message' : 'upload successful'
             }, 200

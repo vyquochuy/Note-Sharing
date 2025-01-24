@@ -3,111 +3,110 @@ from ..db import get_db
 
 import os
 
-class ImageModel:
+class FileModel:
     def __init__(self):
         self.__db = get_db()
 
-    def create_absolute_image_name(self, img):
-        '''Create an absolute name for image.
+    def create_absolute_file_name(self, file):
+        '''Create an absolute name for file.
 
         Input:
-            - img : image
+            - file : uploaded file
         
         Output:
-            - new_filename : new image name (to store on server)
-            - new_img_id : new ID
+            - new_filename : new file name (to store on server)
+            - new_file_id : new ID
         '''
-        filename = img.filename.split('.')[0]
+        filename = file.filename.split('.')[0]
 
-        new_img_id = str(self.get_total_img() + 1)
-        new_filename = img.filename.replace(filename, new_img_id)
+        new_file_id = str(self.get_total_files() + 1)
+        _, extension = os.path.splitext(file.filename.lower())
+        new_filename = f'{new_file_id}{extension}'
 
-        return new_filename, new_img_id
+        return new_filename, new_file_id
 
-    def save_img_dir(self, img):
-        '''Save image to directory (default in UPLOAD_FOLDER)
+    def save_file_dir(self, file):
+        '''Save file to directory (default in UPLOAD_FOLDER)
 
         Input:
-            - img : image to save
+            - file : file to save
         
         Output:
-            - new_name : image name on server
-            - new_img_id : image id
+            - new_name : file name on server
+            - new_file_id : file id
         '''
-        new_name, new_img_id = self.create_absolute_image_name(img)
+        new_name, new_file_id = self.create_absolute_file_name(file)
+        upload_folder = os.path.join(current_app.root_path, current_app.config['UPLOAD_FOLDER'])
+        
+        if not os.path.isdir(upload_folder):
+            os.mkdir(upload_folder)
 
-        if not os.path.isdir(os.path.join(current_app.root_path, current_app.config['UPLOAD_FOLDER'])):
-            os.mkdir(
-                os.path.join(current_app.root_path, current_app.config['UPLOAD_FOLDER'])
-            )
+        new_path = os.path.join(upload_folder, new_name)
+        file.save(new_path)
 
-        new_path = os.path.join(current_app.root_path, current_app.config['UPLOAD_FOLDER'], new_name)
+        return new_name, new_file_id
 
-        img.save(new_path)
-
-        return new_name, new_img_id
-
-    def save_img_record(self, user_id, img_id, passphrase, location, real_name, checksum):
-        '''Adding records to image database.
+    def save_file_record(self, user_id, file_id, passphrase, location, real_name, checksum):
+        '''Adding records to file database.
 
         Input:
             - user_id
-            - img_id
+            - file_id
             - passphrase : Encrypted with RSA
             - location : Filename stored on server.
             - real_name : Original filename when uploaded.
             - checksum : Checksum
         '''
-        # Add records to image database
+        # Add records to file database
         self.__db.execute(
-            'INSERT INTO images (id, author_id, location, real_name, checksum) VALUES (?, ?, ?, ?, ?)',
-            (img_id, user_id, location, real_name, checksum)
+            'INSERT INTO files (id, author_id, location, real_name, checksum) VALUES (?, ?, ?, ?, ?)',
+            (file_id, user_id, location, real_name, checksum)
         )
 
         self.__db.commit()
 
-        self.share_img_to_user(img_id, user_id, passphrase)
+        self.share_file_to_user(file_id, user_id, passphrase)
 
-    def share_img_to_user(self, img_id, user_id, passphrase):
+    def share_file_to_user(self, file_id, user_id, passphrase):
         '''Adding records to share to other user.
 
         Input:
-            - img_id
+            - file_id
             - user_id : ID to share
             - passphrase : new passphrase (Encrypted with RSA)
         '''
         self.__db.execute(
-            'INSERT INTO sharing (image_id, user_id, passphrase) VALUES (?, ?, ?)',
-            (img_id, user_id, passphrase)
+            'INSERT INTO sharing (file_id, user_id, passphrase) VALUES (?, ?, ?)',
+            (file_id, user_id, passphrase)
         )
 
         self.__db.commit()
 
-    def get_total_img(self):
-        '''Count total images on server.
+    def get_total_files(self):
+        '''Count total files on server.
 
         Output:
-            - total_images
+            - total_files
         '''
         db_exec = self.__db.execute(
-            'SELECT COUNT(*) FROM images', ())
+            'SELECT COUNT(*) FROM files', ())
         
         row = db_exec.fetchone()
         return row[0]
     
-    def get_images_of_user(self, user_id):
-        '''Get images of user.
+    def get_files_of_user(self, user_id):
+        '''Get files of user.
 
         Input:
             - user_id
 
         Output:
             - Many rows, each row has this format:
-                - image_id : ID of the file on server.
-                - image_real_name : Original filename
+                - file_id : ID of the file on server.
+                - file_real_name : Original filename
         '''
         db_exec = self.__db.execute(
-            'SELECT images.id, images.real_name FROM images, sharing WHERE images.id = sharing.image_id AND sharing.user_id = ?',
+            'SELECT files.id, files.real_name FROM files, sharing WHERE files.id = sharing.file_id AND sharing.user_id = ?',
             (user_id,)
         )
 
@@ -115,97 +114,97 @@ class ImageModel:
 
         return rows
 
-    def get_img_passphrase(self, user_id, img_id):
-        '''Get image passphrase (for AES decryption)
+    def get_file_passphrase(self, user_id, file_id):
+        '''Get file passphrase (for AES decryption)
 
         Input:
-            - user_id : ID of the user who can download img_id
-            - img_id : ID of the image.
+            - user_id : ID of the user who can download file_id
+            - file_id : ID of the file.
 
         Output:
-            - passphrase : Image passphrase to decrypt.
+            - passphrase : File passphrase to decrypt.
         '''
         db_exec = self.__db.execute(
-            'SELECT passphrase FROM sharing WHERE user_id = ? AND image_id = ?',
-            (user_id, img_id)
+            'SELECT passphrase FROM sharing WHERE user_id = ? AND file_id = ?',
+            (user_id, file_id)
         )
 
         row = db_exec.fetchone()
 
         return row[0]
     
-    def get_img_checksum(self, img_id):
-        '''Get image checksum info
+    def get_file_checksum(self, file_id):
+        '''Get file checksum info
 
         Input:
-            - img_id : ID of the image
+            - file_id : ID of the file
 
         Output:
             - author_id : Author ID
-            - image_checksum : Image checksum
+            - file_checksum : File checksum
         '''
 
         db_exec = self.__db.execute(
-            'SELECT author_id, checksum FROM images WHERE id = ?',
-            (img_id,)
+            'SELECT author_id, checksum FROM files WHERE id = ?',
+            (file_id,)
         )
 
         row = db_exec.fetchone()
 
         return row[0], row[1]
 
-    def check_img_exist(self, user_id, img_id):
-        '''Check if img_id exist (aka user_id has permissions with it).
+    def check_file_exist(self, user_id, file_id):
+        '''Check if file_id exist (aka user_id has permissions with it).
 
         Input:
             - user_id : ID of user
-            - img_id : ID of image
+            - file_id : ID of file
         
         Return:
             - True if user has the right with it, False otherwise.
         '''
         db_exec = self.__db.execute(
-            'SELECT COUNT(*) FROM sharing WHERE user_id = ? AND image_id = ?',
-            (user_id, img_id)
+            'SELECT COUNT(*) FROM sharing WHERE user_id = ? AND file_id = ?',
+            (user_id, file_id)
         )
 
         row = db_exec.fetchone()
 
         return row[0] != 0
     
-    def get_img_filename(self, user_id, img_id):
-        '''Get image filename (for download)
+    def get_file_filename(self, user_id, file_id):
+        '''Get file filename (for download)
 
         Input:
             - user_id : User ID (has permissions)
-            - img_id : Image ID
+            - file_id : File ID
 
         Return:
-            - image_location : Filename on server
-            - image_realname : Original file name
+            - file_location : Filename on server
+            - file_realname : Original file name
         '''
         db_exec = self.__db.execute(
-            'SELECT images.location, images.real_name FROM images, sharing WHERE sharing.user_id = ? AND sharing.image_id = ? AND sharing.image_id = images.id',
-            (user_id, img_id)
+            'SELECT files.location, files.real_name FROM files, sharing WHERE sharing.user_id = ? AND sharing.file_id = ? AND sharing.file_id = files.id',
+            (user_id, file_id)
         )
 
         row = db_exec.fetchone()
 
         return row[0], row[1]
     
-    def is_author(self, user_id, img_id):
-        '''Check if user is author (the-one-who-uploaded) of the image.
+    def is_author(self, user_id, file_id):
+        '''Check if user is author (the-one-who-uploaded) of the file.
 
         Input:
             - user_id : ID of the author (to check)
-            - img_id : ID of the image
+            - file_id : ID of the file
 
         Return:
             - True if user is the author, False otherwise
         '''
         db_exec = self.__db.execute(
-            'SELECT COUNT(*) FROM images WHERE id = ? AND author_id = ?',
-            (img_id, user_id)
+            'SELECT COUNT(*) FROM files WHERE id = ? AND author_id = ?',
+            (file_id, user_id)
         )
 
         row = db_exec.fetchone()
