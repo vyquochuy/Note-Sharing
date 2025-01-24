@@ -1,9 +1,8 @@
 import os
-
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api
-from db import init_app
+from db import init_app, close_db  # Import init_app and close_db from db.py
 
 # Modules
 from modules.PingPong import PingPong
@@ -20,34 +19,38 @@ def create_app():
     app = Flask(__name__)
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'  # File SQLite
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['DATABASE'] = 'data.db'  # Set the DATABASE configuration key
 
-    # Đảm bảo thư mục instance tồn tại
+    # Ensure the instance folder exists
     os.makedirs(app.instance_path, exist_ok=True)
 
-    # Khởi tạo module database
-    init_app(app)
+    # Initialize the database module
+    init_app(app)  # Call init_app to register the init-db command
 
-    # Kết nối SQLAlchemy
+    # Connect SQLAlchemy
     db.init_app(app)
 
-    # Tạo model cho bảng lưu dữ liệu
-    class Task(db.Model):
+    # Define the model for the table
+    class User(db.Model):
         id = db.Column(db.Integer, primary_key=True)
-        title = db.Column(db.String(80), nullable=False)
-        description = db.Column(db.String(200), nullable=True)
+        name = db.Column(db.String(80), nullable=False)
+        public_key = db.Column(db.String(200), nullable=False)
+        key_length = db.Column(db.String(200), nullable=False)
+        api_token = db.Column(db.String(200), nullable=True)
+        verify_token = db.Column(db.String(200), nullable=True)
 
-    # Tạo database và bảng nếu chưa có
+    # Create the database and tables if they don't exist
     with app.app_context():
         db.create_all()
 
-    # Route để lấy tất cả công việc
+    # Route to get all tasks
     @app.route("/tasks", methods=["GET"])
     def get_tasks():
         tasks = Task.query.all()
         result = [{"id": task.id, "title": task.title, "description": task.description} for task in tasks]
         return jsonify(result)
 
-    # Route để thêm công việc mới
+    # Route to add a new task
     @app.route("/tasks", methods=["POST"])
     def add_task():
         data = request.json
@@ -56,7 +59,7 @@ def create_app():
         db.session.commit()
         return jsonify({"message": "Task created successfully!"}), 201
 
-    # Route để xóa công việc
+    # Route to delete a task
     @app.route("/tasks/<int:id>", methods=["DELETE"])
     def delete_task(id):
         task = Task.query.get(id)
@@ -65,13 +68,12 @@ def create_app():
         db.session.delete(task)
         db.session.commit()
         return jsonify({"message": "Task deleted successfully!"})
-    
+
     @app.route("/", methods=["GET"])
     def home():
         return jsonify({"message": "Welcome to the Task API!"})
-    
-    
-    # API initialising
+
+    # API initializing
     api = Api(app)
     api.add_resource(PingPong, '/ping')
     api.add_resource(Register, '/register')
@@ -81,45 +83,48 @@ def create_app():
     api.add_resource(
         DownloadImages,
         '/viewall',
-        endpoint = 'viewall',
-        methods = ['POST']
+        endpoint='viewall',
+        methods=['POST']
     )
     api.add_resource(
-        DownloadImages, 
+        DownloadImages,
         '/passphrase',
-        endpoint = 'passphrase',
-        methods = ['POST']
+        endpoint='passphrase',
+        methods=['POST']
     )
     api.add_resource(
         DownloadImages,
         '/download',
-        endpoint = 'download',
-        methods = ['POST']
+        endpoint='download',
+        methods=['POST']
     )
     api.add_resource(
         DownloadImages,
         '/checksum',
-        endpoint = 'checksum',
-        methods = ['POST']
+        endpoint='checksum',
+        methods=['POST']
     )
     api.add_resource(
         Sharing,
         '/publickey',
-        endpoint = 'publickey',
-        methods = ['POST']
+        endpoint='publickey',
+        methods=['POST']
     )
     api.add_resource(
         Sharing,
         '/share',
-        endpoint = 'share',
-        methods = ['POST']
+        endpoint='share',
+        methods=['POST']
     )
     return app
 
-
-# Tạo instance Flask và cấu hình database
+# Create Flask instance and configure database
 app = create_app()
 
-# Khởi động server
+@app.teardown_appcontext
+def teardown_db(exception):
+    close_db(exception)
+
+# Start the server
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=True)

@@ -1,0 +1,6 @@
+flask
+flask_sqlalchemy
+Flask_RESTful
+pycryptodome
+requests
+opencv_python
