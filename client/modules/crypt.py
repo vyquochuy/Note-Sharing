@@ -61,23 +61,30 @@ class AES():
         Return:
             - decrypted_checksum : checksum of the decrypted file.
         '''
-        with open(filename, 'rb') as f:
-            encrypted_file_bytes = f.read()
+        try:
+            with open(filename, 'rb') as f:
+                encrypted_file_bytes = f.read()
 
-        decrypted_file_bytes = cc.new(key.encode(), cc.MODE_CBC, self.__iv).decrypt(encrypted_file_bytes)
+            decrypted_file_bytes = cc.new(key.encode(), cc.MODE_CBC, self.__iv).decrypt(encrypted_file_bytes)
 
-        # Remove padding
-        pad_length = decrypted_file_bytes[-1]
-        decrypted_file_bytes = decrypted_file_bytes[:-pad_length]
+            # Remove padding
+            pad_length = decrypted_file_bytes[-1]
+            if not (1 <= pad_length <= 16):
+                raise ValueError("Invalid padding detected during decryption")
+            
+            decrypted_file_bytes = decrypted_file_bytes[:-pad_length]
 
-        decrypted_checksum = hashlib.sha256(decrypted_file_bytes).hexdigest()
+            decrypted_checksum = hashlib.sha256(decrypted_file_bytes).hexdigest()
 
-        # Save the decrypted file
-        with open(old_filename, 'wb') as f:
-            f.write(decrypted_file_bytes)
+            # Save the decrypted file
+            with open(old_filename, 'wb') as f:
+                f.write(decrypted_file_bytes)
 
-        return decrypted_checksum
+            return decrypted_checksum
         
+        except Exception as e:
+            print(e)
+            return None
 
 class BigMod:
     @staticmethod
