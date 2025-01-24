@@ -58,8 +58,6 @@ class UploadFile:
         if response["error"]:
             raise Exception(response["message"])
         else:
-            # Delete temp files after successful upload
-            os.remove(encrypted_file)
             return response["message"]
 
 class UploadUI:

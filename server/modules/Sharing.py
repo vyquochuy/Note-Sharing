@@ -15,7 +15,7 @@ class Sharing(Resource):
         if request.endpoint == 'publickey':
             return self.get_user_public_key()
         if request.endpoint == 'share':
-            return self.share_image_to_user()
+            return self.share_file_to_user()
         return None, 204
 
     def get_user_public_key(self):
@@ -45,12 +45,12 @@ class Sharing(Resource):
                 'message' : str(e)
             }, 400
 
-    def share_image_to_user(self):
+    def share_file_to_user(self):
         try:
             author_id = Utils.get_input('author_id')
             guest_id = Utils.get_input('guest_id')
             api_token = Utils.get_input('api_token')
-            file_id = Utils.get_input('img_id')
+            file_id = Utils.get_input('file_id')
             passphrase = Utils.get_input('passphrase')
 
             if not self.__UA.check_api_token(author_id, api_token):
@@ -59,17 +59,17 @@ class Sharing(Resource):
             elif not self.__im.is_author(author_id, file_id):
                 raise Exception('Permission denied: this user is not the author')
             
-            elif not self.__im.check_img_exist(author_id, file_id):
-                raise Exception('Image not found')
+            elif not self.__im.check_file_exist(author_id, file_id):
+                raise Exception('file not found')
             
-            elif self.__im.check_img_exist(guest_id, file_id):
+            elif self.__im.check_file_exist(guest_id, file_id):
                 raise Exception('Already shared')
             
             elif not self.__UA.check_user_exist(guest_id):
                 raise Exception('Guest not found')
             
             else:
-                self.__im.share_img_to_user(file_id, guest_id, passphrase)
+                self.__im.share_file_to_user(file_id, guest_id, passphrase)
 
                 return {
                     'error' : False,

@@ -26,9 +26,6 @@ def create_app():
     app.config['DATABASE'] = 'data.db'  # Set the DATABASE configuration key
     app.config['UPLOAD_FOLDER'] = 'uploads' # Set the UPLOAD_FOLDER configuration key
 
-    # Ensure the instance folder exists
-    os.makedirs(app.instance_path, exist_ok=True)
-
     # Initialize the database module
     init_app(app)  # Call init_app to register the init-db command
 

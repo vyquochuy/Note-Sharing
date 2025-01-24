@@ -9,7 +9,7 @@ class GetFileList:
         self.__default_url = 'http://{0}:{1}'.format(self.__ip, self.__port)
 
     def getFiles(self, user_id, api_token):        
-        url = self.__default_url + '/viewallfiles'
+        url = self.__default_url + '/viewall'
         res = requests.post(url, params={
             'user_id': user_id,
             'api_token': api_token
